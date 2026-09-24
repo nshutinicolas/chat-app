@@ -10,16 +10,23 @@ import SwiftUI
 struct ChatDetailsView: View {
 	@State private var viewModel = ChatDetailsViewModel()
 	let currentUser: User
-	let messages: [any MessageProtocol]
+	let chat: any ChatProtocol
 	
-	init(currentUser: User, messages: [any MessageProtocol]) {
+	init(currentUser: User, chat: any ChatProtocol) {
 		self.currentUser = currentUser
-		self.messages = messages
+		self.chat = chat
 	}
 	
     var body: some View {
 		VStack {
-			ChatMessagesView(currentUser: currentUser, messages: messages)
+			switch viewModel.loadingState {
+			case .loading:
+				ProgressView("Loading messages")
+			case .loaded:
+				ChatMessagesView(currentUser: currentUser, messages: viewModel.messages)
+			case .error:
+				
+			}
 		}
 		.safeAreaInset(edge: .bottom) {
 			HStack {
@@ -148,6 +155,6 @@ struct MessageRow: View {
 #Preview("Chat") {
 	ChatDetailsView(
 		currentUser: User(id: "me", name: "Nicolas", avator: nil),
-		messages: Message.mocks
+		chat: Chat.mocks.first!
 	)
 }

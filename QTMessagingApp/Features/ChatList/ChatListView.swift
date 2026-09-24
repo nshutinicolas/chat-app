@@ -57,6 +57,9 @@ struct ChatListView: View {
 		.onAppear {
 			viewModel.fetchChats()
 		}
+//		.navigationDestination(for: Chat.self) { chat in
+//			ChatDetailsView(currentUser: currentUser, chat: chat)
+//		}
     }
 	
 	func otherUser(for chat: any ChatProtocol) -> User? {
