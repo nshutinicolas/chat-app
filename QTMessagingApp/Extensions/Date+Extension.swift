@@ -8,8 +8,8 @@
 import Foundation
 
 extension Date {
-	func adding(minutes: Int) -> Date {
-		Calendar.current.date(byAdding: .minute, value: minutes, to: self) ?? self
+	func removing(minutes: Int) -> Date {
+		Calendar.current.date(byAdding: .minute, value: -minutes, to: self) ?? self
 	}
 	
 	func chatFormatted() -> String {

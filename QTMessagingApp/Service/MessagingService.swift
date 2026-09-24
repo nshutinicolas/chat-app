@@ -38,6 +38,13 @@ extension MessagingService: ChatDetailsServiceProtocol {
 	func loadChatMessages(forChat chatId: String) -> AsyncThrowingStream<any MessageProtocol, Error> {
 		AsyncThrowingStream { continuation in
 			// Do the service work from here
+			// For Testing purpose only
+			Task {
+				for message in Message.mocks {
+					continuation.yield(message)
+					try? await Task.sleep(for: .seconds(0.3))
+				}
+			}
 		}
 	}
 	

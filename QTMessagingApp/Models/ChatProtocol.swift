@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol ChatProtocol: Codable {
+protocol ChatProtocol: Codable, Hashable {
 	var id: String { get }
 	var latestMessage: any MessageProtocol { get }
 	var participants: [User] {get }
@@ -37,6 +37,14 @@ struct Chat: ChatProtocol {
 	
 	enum CodingKeys: String, CodingKey {
 		case id, latestMessage, participants
+	}
+	
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(id)
+	}
+	
+	static func == (lhs: Chat, rhs: Chat) -> Bool {
+		lhs.id == rhs.id
 	}
 }
 

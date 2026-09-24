@@ -8,13 +8,16 @@
 import SwiftUI
 
 struct ChatDetailsView: View {
-	@State private var viewModel = ChatDetailsViewModel()
-	let currentUser: User
-	let chat: any ChatProtocol
+	@State private var viewModel: ChatDetailsViewModel
+	@State private var openDocSelector = false
+	private let currentUser: User
+	private let chat: any ChatProtocol
+	@FocusState private var textfieldFocused
 	
 	init(currentUser: User, chat: any ChatProtocol) {
 		self.currentUser = currentUser
 		self.chat = chat
+		self._viewModel = State(wrappedValue: ChatDetailsViewModel(chat: chat))
 	}
 	
     var body: some View {
@@ -25,37 +28,84 @@ struct ChatDetailsView: View {
 			case .loaded:
 				ChatMessagesView(currentUser: currentUser, messages: viewModel.messages)
 			case .error:
-				
+				VStack {
+					Text("Failed to fetch messages. Please try again later.")
+					Button("Reload") { }
+				}
 			}
 		}
+		.frame(maxWidth: .infinity, maxHeight: .infinity)
 		.safeAreaInset(edge: .bottom) {
-			HStack {
-				Button("", systemImage: "plus") {
-					
-				}
-				.labelStyle(.iconOnly)
-				.font(.title3.weight(.semibold))
-				.padding(8)
-				.clipShape(.circle)
-				.overlay {
-					Circle()
-						.stroke(Color.gray, lineWidth: 1)
-				}
-				TextField("Enter a message", text: .constant(""))
-					.font(.body)
-					.lineLimit(1...6)
-					.fixedSize(horizontal: false, vertical: true)
-					.padding(.vertical, 12)
-					.padding(.horizontal, 8)
+			VStack {
+				HStack {
+					Button("", systemImage: "plus") {
+						withAnimation {
+							openDocSelector.toggle()
+						}
+					}
+					.labelStyle(.iconOnly)
+					.font(.title3.weight(.semibold))
+					.padding(8)
+					.clipShape(.circle)
 					.overlay {
-						RoundedRectangle(cornerRadius: 12)
+						Circle()
 							.stroke(Color.gray, lineWidth: 1)
 					}
-					.background()
-					.clipShape(.rect(cornerRadius: 12))
+					TextField("Enter a message", text: .constant(""))
+						.focused($textfieldFocused)
+						.font(.body)
+						.lineLimit(1...6)
+						.fixedSize(horizontal: false, vertical: true)
+						.padding(.vertical, 12)
+						.padding(.horizontal, 8)
+						.overlay {
+							RoundedRectangle(cornerRadius: 12)
+								.stroke(Color.gray, lineWidth: 1)
+						}
+						.background()
+						.clipShape(.rect(cornerRadius: 12))
+				}
+				.background()
+				if openDocSelector {
+					HStack(spacing: 12) {
+						Button {} label: {
+							VStack {
+								Image(systemName: "camera")
+								Text("Take Photo")
+							}
+							.background()
+						}
+						.buttonStyle(.plain)
+						Button {} label: {
+							VStack {
+								Image(systemName: "photo")
+								Text("Gallery")
+							}
+							.background()
+						}
+						.buttonStyle(.plain)
+						Button {} label: {
+							VStack {
+								Image(systemName: "doc")
+								Text("Document")
+							}
+							.background()
+						}
+						.buttonStyle(.plain)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
 			}
 		}
 		.padding()
+		.onChange(of: textfieldFocused) { oldValue, newValue in
+			guard oldValue != newValue, newValue == true else { return }
+			withAnimation {
+				openDocSelector = false
+			}
+		}
+		.navigationTitle(currentUser.name)
+//		.navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -69,27 +119,44 @@ struct ChatMessagesView: View {
 	}
 	
 	var body: some View {
-		ScrollView {
-			LazyVStack {
-				ForEach(messages, id: \.id) { message in
-					HStack {
-						// If the message is mine, push it to the right
-						if isMessageMine(message) {
-							Spacer()
+		ScrollViewReader { proxy in
+			ScrollView {
+				LazyVStack {
+					ForEach(messages, id: \.id) { message in
+						HStack {
+							// If the message is mine, push it to the right
+							if isMessageMine(message) {
+								Spacer()
+							}
+							MessageRow(currentUser: currentUser, message: message)
+							// If message is not mine, then send it to the far left
+							if isMessageMine(message) == false {
+								Spacer()
+							}
 						}
-						MessageRow(currentUser: currentUser, message: message)
-						// If message is not mine, then send it to the far left
-						if isMessageMine(message) == false {
-							Spacer()
-						}
+						.id(message.id)
 					}
 				}
+			}
+			.onAppear {
+				scrollToBottom(proxy)
+			}
+			.onChange(of: messages.count) { _, _ in
+				scrollToBottom(proxy)
 			}
 		}
 	}
 	
-	func isMessageMine(_ message: any MessageProtocol) -> Bool {
+	private func isMessageMine(_ message: any MessageProtocol) -> Bool {
 		currentUser.id == message.sender.id
+	}
+	
+	private func scrollToBottom(_ proxy: ScrollViewProxy) {
+		withAnimation {
+			if let last = messages.last {
+				proxy.scrollTo(last.id, anchor: .bottom)
+			}
+		}
 	}
 }
 
@@ -97,7 +164,7 @@ struct MessageRow: View {
 	let currentUser: User
 	let message: any MessageProtocol
 	var body: some View {
-		VStack {
+		VStack(alignment: .trailing, spacing: 4) {
 			switch message.content {
 			case .text(let text):
 				Text(text)
@@ -110,6 +177,8 @@ struct MessageRow: View {
 				// TODO: Implement the view later
 				EmptyView()
 			}
+			Text(message.date.chatFormatted())
+				.font(.caption)
 		}
 	}
 	

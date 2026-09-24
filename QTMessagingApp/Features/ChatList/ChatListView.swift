@@ -26,20 +26,25 @@ struct ChatListView: View {
 					LazyVStack {
 						ForEach(viewModel.chats, id: \.id) { chat in
 							if let user = otherUser(for: chat) {
-								HStack(alignment: .top) {
-									Circle()
-										.fill(Color.gray)
-										.frame(width: 50, height: 50)
-									VStack(alignment: .leading) {
-										Text(user.name)
-											.fontWeight(.semibold)
-										chatRow(for: chat)
+								NavigationLink(value: chat) {
+									HStack(alignment: .top) {
+										Circle()
+											.fill(Color.gray)
+											.frame(width: 50, height: 50)
+										VStack(alignment: .leading) {
+											Text(user.name)
+												.fontWeight(.semibold)
+											chatRow(for: chat)
+												.font(.caption)
+										}
+										.frame(maxWidth: .infinity, alignment: .leading)
+										Text(chat.latestMessage.date.chatFormatted())
 											.font(.caption)
 									}
 									.frame(maxWidth: .infinity, alignment: .leading)
-									Text("12:00")
+									.background()
 								}
-								.frame(maxWidth: .infinity, alignment: .leading)
+								.buttonStyle(.plain)
 								Divider()
 							}
 						}
@@ -54,12 +59,10 @@ struct ChatListView: View {
 				}
 			}
 		}
-		.onAppear {
-			viewModel.fetchChats()
+		.navigationTitle("Messages")
+		.navigationDestination(for: Chat.self) { chat in
+			ChatDetailsView(currentUser: currentUser, chat: chat)
 		}
-//		.navigationDestination(for: Chat.self) { chat in
-//			ChatDetailsView(currentUser: currentUser, chat: chat)
-//		}
     }
 	
 	func otherUser(for chat: any ChatProtocol) -> User? {

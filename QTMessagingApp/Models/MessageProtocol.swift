@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol MessageProtocol: Codable {
+protocol MessageProtocol: Codable, Hashable, Equatable {
 	var id: String { get }
 	var content: MessageContent { get }
 	var sender: User { get }
@@ -16,19 +16,19 @@ protocol MessageProtocol: Codable {
 	var replyTo: (any MessageProtocol)? { get }
 }
 
-enum MessageContent: Codable {
+enum MessageContent: Codable, Hashable {
 	case text(String)
 	case images([String])
 	case files([String])
 }
 
-enum MessageStatus: Codable, Equatable {
+enum MessageStatus: Codable, Equatable, Hashable {
 	case sending
 	case sent
 	case failed
 }
 
-struct User: Codable {
+struct User: Codable, Hashable {
 	let id: String
 	let name: String
 	let avator: String?
@@ -76,6 +76,13 @@ struct Message: MessageProtocol {
 	func encode(to encoder: any Encoder) throws {
 		// Implement when needed
 	}
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(id)
+	}
+	
+	static func == (lhs: Message, rhs: Message) -> Bool {
+		lhs.id == rhs.id
+	}
 }
 
 // MARK: - Mocks
@@ -85,49 +92,49 @@ extension Message {
 			id: UUID().uuidString,
 			content: .text("Hello"),
 			sender: User(id: "me", name: "Nicolas", avator: nil),
-			date: Date().adding(minutes: 20),
+			date: Date().removing(minutes: 20),
 			isRead: true
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Hello"),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
-			date: Date().adding(minutes: 19),
+			date: Date().removing(minutes: 19),
 			isRead: true
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Hi"),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
-			date: Date().adding(minutes: 18),
+			date: Date().removing(minutes: 18),
 			isRead: true
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Are you fine?"),
 			sender: User(id: "me", name: "Nicolas", avator: nil),
-			date: Date().adding(minutes: 16),
+			date: Date().removing(minutes: 16),
 			isRead: true
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Yes and I'm coding"),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
-			date: Date().adding(minutes: 14),
+			date: Date().removing(minutes: 14),
 			isRead: true
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Proof"),
 			sender: User(id: "me", name: "Nicolas", avator: nil),
-			date: Date().adding(minutes: 10),
+			date: Date().removing(minutes: 10),
 			isRead: true
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .images([""]),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
-			date: Date().adding(minutes: 3),
+			date: Date().removing(minutes: 3),
 			isRead: true
 		)
 	]
