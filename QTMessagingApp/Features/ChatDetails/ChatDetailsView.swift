@@ -1,5 +1,5 @@
 //
-//  ChatDetails.swift
+//  ChatDetailsView.swift
 //  QTMessagingApp
 //
 //  Created by Musoni nshuti Nicolas on 24/09/2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChatDetails: View {
+struct ChatDetailsView: View {
 	let currentUser: User
 	let messages: [any MessageProtocol]
 	
@@ -145,7 +145,7 @@ struct MessageRow: View {
 }
 
 #Preview("Chat") {
-	ChatDetails(
+	ChatDetailsView(
 		currentUser: User(id: "me", name: "Nicolas", avator: nil),
 		messages: Message.mocks
 	)
