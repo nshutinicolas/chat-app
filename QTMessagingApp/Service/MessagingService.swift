@@ -20,9 +20,16 @@ class MessagingService {
 
 // Chat
 extension MessagingService: ChatListServiceProtocol {
-	func loadChats() -> AsyncThrowingStream<[any ChatProtocol], Error> {
+	func loadChats() -> AsyncThrowingStream<any ChatProtocol, Error> {
 		AsyncThrowingStream { continuation in
 			// Do the service work from the backend
+			// For testing only
+			Task {
+				for chat in Chat.mocks {
+					continuation.yield(chat)
+					try? await Task.sleep(for: .seconds(0.5))
+				}
+			}
 		}
 	}
 }

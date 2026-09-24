@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ChatListView: View {
+	@State private var viewModel = ChatListViewModel()
 	let currentUser: User
-	let chats: [any ChatProtocol] = Chat.mocks
 	
 	init(currentUser: User) {
 		self.currentUser = currentUser
@@ -17,30 +17,45 @@ struct ChatListView: View {
 	
     var body: some View {
 		VStack {
-			ScrollView {
-				LazyVStack {
-					ForEach(chats, id: \.id) { chat in
-						if let user = otherUser(for: chat) {
-							HStack(alignment: .top) {
-								Circle()
-									.fill(Color.gray)
-									.frame(width: 50, height: 50)
-								VStack(alignment: .leading) {
-									Text(user.name)
-										.fontWeight(.semibold)
-									chatRow(for: chat)
-										.font(.caption)
+			switch viewModel.displayState {
+			case .loading:
+				// Create a shimmer view
+				ProgressView("Loading chats...")
+			case .complete:
+				ScrollView {
+					LazyVStack {
+						ForEach(viewModel.chats, id: \.id) { chat in
+							if let user = otherUser(for: chat) {
+								HStack(alignment: .top) {
+									Circle()
+										.fill(Color.gray)
+										.frame(width: 50, height: 50)
+									VStack(alignment: .leading) {
+										Text(user.name)
+											.fontWeight(.semibold)
+										chatRow(for: chat)
+											.font(.caption)
+									}
+									.frame(maxWidth: .infinity, alignment: .leading)
+									Text("12:00")
 								}
 								.frame(maxWidth: .infinity, alignment: .leading)
-								Text("12:00")
+								Divider()
 							}
-							.frame(maxWidth: .infinity, alignment: .leading)
-							Divider()
 						}
 					}
+					.padding()
 				}
-				.padding()
+			case .error:
+				VStack {
+					Text("Failed to load messages")
+						.foregroundStyle(.red)
+					Button("Retry") { }
+				}
 			}
+		}
+		.onAppear {
+			viewModel.fetchChats()
 		}
     }
 	

@@ -11,11 +11,13 @@ struct ContentView: View {
 	@LocalProperties(.userId) var userId: String?
 	@LocalProperties(.userName) var userName: String?
     var body: some View {
-		if let userId, let userName {
-			ChatListView(currentUser: User(id: userId, name: userName, avator: nil))
-		} else {
-			UserNameView {
-				// Using this completion to observe the content change in setting the user name
+		NavigationStack {
+			if let userId, let userName {
+				ChatListView(currentUser: User(id: userId, name: userName, avator: nil))
+			} else {
+				UserNameView {
+					// Using this completion to observe the content change in setting the user name
+				}
 			}
 		}
     }
