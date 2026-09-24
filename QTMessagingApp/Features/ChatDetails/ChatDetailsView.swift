@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ChatDetailsView: View {
+	@State private var viewModel = ChatDetailsViewModel()
 	let currentUser: User
 	let messages: [any MessageProtocol]
 	

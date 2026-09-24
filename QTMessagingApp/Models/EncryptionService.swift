@@ -8,13 +8,5 @@
 import Foundation
 
 protocol MessageEncryptionService {
-	func encrypt(
-		_ plaintext: String,
-		conversation: Messa
-	) throws -> EncryptedMessage
 	
-	func decrypt(
-		_ message: EncryptedMessage,
-		conversation: Conversation
-	) throws -> String
 }

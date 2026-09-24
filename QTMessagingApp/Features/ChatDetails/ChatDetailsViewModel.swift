@@ -8,7 +8,7 @@
 import SwiftUI
 
 protocol ChatDetailsServiceProtocol {
-	func loadChatMessages(forChat chatId: String) -> AsyncThrowingStream<[any MessageProtocol], Error>
+	func loadChatMessages(forChat chatId: String) -> AsyncThrowingStream<any MessageProtocol, Error>
 	func sendMessage(_ message: MessageContent) async throws
 }
 
@@ -16,8 +16,46 @@ protocol ChatDetailsServiceProtocol {
 class ChatDetailsViewModel {
 	private let service: ChatDetailsServiceProtocol
 	
+	var loadingState: ViewLoadingState = .loading
+	var messages: [any MessageProtocol] = []
+	
 	init(service: ChatDetailsServiceProtocol = MessagingService.shared) {
 		self.service = service
+	}
+	deinit {
+		tasks.forEach { $0.value.cancel() }
+	}
+	
+	// Task
+	private var tasks: [Tasks: Task<Void, Never>] = [:]
+	
+	func fetchChatMessages(chatId: String) {
+		guard tasks[.fetchChatMessages] == nil else { return }
+		tasks[.fetchChatMessages] = Task { @MainActor [weak self] in
+			guard let self else { return }
+			self.loadingState = .loading
+			do {
+				for try await chat in self.service.loadChatMessages(forChat: chatId) {
+					var previousMessages = self.messages
+					previousMessages.append(chat)
+					self.messages = previousMessages.sorted { $0.date < $1.date }
+				}
+			} catch {
+				self.loadingState = .error
+				print(error)
+			}
+		}
+	}
+	
+	enum ViewLoadingState: Equatable {
+		case loading
+		case loaded
+		case error
+	}
+	
+	enum Tasks {
+		case fetchChatMessages
+		case sendMessage
 	}
 }
 

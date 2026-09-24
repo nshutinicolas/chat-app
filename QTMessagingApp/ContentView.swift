@@ -8,14 +8,16 @@
 import SwiftUI
 
 struct ContentView: View {
+	@LocalProperties(.userId) var userId: String?
+	@LocalProperties(.userName) var userName: String?
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+		if let userId, let userName {
+			ChatListView(currentUser: User(id: userId, name: userName, avator: nil))
+		} else {
+			UserNameView {
+				// Using this completion to observe the content change in setting the user name
+			}
+		}
     }
 }
 

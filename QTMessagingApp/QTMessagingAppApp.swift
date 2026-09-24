@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct QTMessagingAppApp: App {
@@ -13,5 +14,6 @@ struct QTMessagingAppApp: App {
         WindowGroup {
             ContentView()
         }
+		.modelContainer(for: UserInfo.self)
     }
 }

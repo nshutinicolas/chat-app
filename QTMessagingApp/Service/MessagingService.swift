@@ -6,6 +6,11 @@
 //
 
 import Foundation
+import CryptoKit
+
+enum ServiceError: Error {
+	case invalidData
+}
 
 class MessagingService {
 	static let shared = MessagingService()
@@ -23,13 +28,25 @@ extension MessagingService: ChatListServiceProtocol {
 }
 
 extension MessagingService: ChatDetailsServiceProtocol {
-	func loadChatMessages(forChat chatId: String) -> AsyncThrowingStream<[any MessageProtocol], Error> {
+	func loadChatMessages(forChat chatId: String) -> AsyncThrowingStream<any MessageProtocol, Error> {
 		AsyncThrowingStream { continuation in
 			// Do the service work from here
 		}
 	}
 	
 	func sendMessage(_ message: MessageContent) async throws {
-		// Do the encryption and the message sending
+		// Encrypt the data before sending
+		let messageData: Data? = switch message {
+		case .text(let text):
+			text.data(using: .utf8)
+		case .images(let images):
+			Data(images.joined().utf8)
+		case .files(let files):
+			Data(files.joined().utf8)
+		}
+		guard let messageData else {
+			throw ServiceError.invalidData
+		}
+		
 	}
 }

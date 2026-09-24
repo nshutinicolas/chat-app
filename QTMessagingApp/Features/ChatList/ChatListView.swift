@@ -8,8 +8,13 @@
 import SwiftUI
 
 struct ChatListView: View {
-	let currentUser = User(id: "me", name: "Nicolas", avator: nil)
+	let currentUser: User
 	let chats: [any ChatProtocol] = Chat.mocks
+	
+	init(currentUser: User) {
+		self.currentUser = currentUser
+	}
+	
     var body: some View {
 		VStack {
 			ScrollView {
@@ -57,5 +62,5 @@ struct ChatListView: View {
 }
 
 #Preview {
-    ChatListView()
+	ChatListView(currentUser: User(id: "me", name: "Nicolas", avator: nil))
 }
