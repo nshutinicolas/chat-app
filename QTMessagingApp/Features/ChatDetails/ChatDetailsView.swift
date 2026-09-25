@@ -253,18 +253,48 @@ struct MessageRow: View {
 	let currentUser: User
 	let message: any MessageProtocol
 	var body: some View {
-		VStack(alignment: .trailing, spacing: 4) {
-			switch message.content {
-			case .text(let text):
-				Text(text)
-					.padding()
-					.background(Color.gray.opacity(0.2))
-					.clipShape(.rect(cornerRadius: 16))
-			case .docs(let images):
-				imageView(images)
+		HStack {
+			VStack(alignment: .trailing, spacing: 4) {
+				switch message.content {
+				case .text(let text):
+					Text(text)
+						.padding()
+						.roundedBorder(16, fill: .gray.opacity(0.2), lineWidth: .zero)
+						.background(Color.gray.opacity(0.2))
+						.clipShape(.rect(cornerRadius: 16))
+				case .docs(let images):
+					imageView(images)
+				}
+				HStack {
+					Text(message.date.chatFormatted())
+						.font(.caption)
+					Group {
+						switch message.status {
+						case .sending:
+							Image(systemName: "arrow.2.circlepath.circle")
+								.foregroundStyle(.gray)
+						case .failed:
+							Image(systemName: "exclamationmark.circle")
+								.foregroundStyle(.red)
+						case .sent:
+							Image(systemName: "checkmark.circle")
+								.foregroundStyle(.green)
+						}
+					}
+					.font(.footnote)
+				}
 			}
-			Text(message.date.chatFormatted())
-				.font(.caption)
+			// Resend message indicator
+			if message.status == .failed {
+				Button {} label: {
+					VStack {
+						Image(systemName: "arrow.2.circlepath.circle")
+						Text("Retry")
+					}
+					.font(.caption)
+				}
+				.buttonStyle(.plain)
+			}
 		}
 	}
 	

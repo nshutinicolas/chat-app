@@ -98,7 +98,8 @@ class ChatDetailsViewModel {
 						sender: currentUser,
 						date: .now,
 						isRead: false,
-						replyTo: replyTo
+						status: .sending,
+						replyTo: self.replyTo
 					)
 					try await self.service.sendMessage(message)
 				} catch {
@@ -112,7 +113,9 @@ class ChatDetailsViewModel {
 					content: .text(textFieldText),
 					sender: currentUser,
 					date: .now,
-					isRead: false
+					isRead: false,
+					status: .sending,
+					replyTo: self.replyTo
 				)
 				do {
 					try await self.service.sendMessage(message)
@@ -170,4 +173,3 @@ class ChatDetailsViewModel {
 		case empty
 	}
 }
-

@@ -13,6 +13,7 @@ protocol MessageProtocol: Codable, Hashable, Equatable {
 	var sender: User { get }
 	var date: Date {get }
 	var isRead: Bool { get }
+	var status: MessageStatus { get }
 	var replyTo: (any MessageProtocol)? { get }
 }
 
@@ -60,6 +61,7 @@ struct Message: MessageProtocol {
 	var sender: User
 	var date: Date
 	var isRead: Bool
+	var status: MessageStatus
 	var replyTo: (any MessageProtocol)?
 	
 	init(
@@ -68,6 +70,7 @@ struct Message: MessageProtocol {
 		sender: User,
 		date: Date,
 		isRead: Bool,
+		status: MessageStatus,
 		replyTo: (any MessageProtocol)? = nil
 	) {
 		self.id = id
@@ -76,6 +79,7 @@ struct Message: MessageProtocol {
 		self.date = date
 		self.isRead = isRead
 		self.replyTo = replyTo
+		self.status = status
 	}
 	
 	init(from decoder: any Decoder) throws {
@@ -85,6 +89,8 @@ struct Message: MessageProtocol {
 		self.sender = try container.decode(User.self, forKey: .sender)
 		self.date = try container.decode(Date.self, forKey: .date)
 		self.isRead = try container.decode(Bool.self, forKey: .isRead)
+		// Will always be sent as the server already has access to it
+		self.status = .sent
 		// TODO: Implement as an enhancement
 		self.replyTo = nil
 	}
@@ -123,49 +129,56 @@ extension Message {
 			content: .text("Hello"),
 			sender: User(id: "me", name: "Nicolas", avator: nil),
 			date: Date().removing(minutes: 20),
-			isRead: true
+			isRead: true,
+			status: .sent
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Hello"),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
 			date: Date().removing(minutes: 19),
-			isRead: true
+			isRead: true,
+			status: .sent
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Hi"),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
 			date: Date().removing(minutes: 18),
-			isRead: true
+			isRead: true,
+			status: .sent
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Are you fine?"),
 			sender: User(id: "me", name: "Nicolas", avator: nil),
 			date: Date().removing(minutes: 16),
-			isRead: true
+			isRead: true,
+			status: .sent
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Yes and I'm coding"),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
 			date: Date().removing(minutes: 14),
-			isRead: true
+			isRead: true,
+			status: .sent
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .text("Proof"),
 			sender: User(id: "me", name: "Nicolas", avator: nil),
 			date: Date().removing(minutes: 10),
-			isRead: true
+			isRead: true,
+			status: .sent
 		),
 		Message(
 			id: UUID().uuidString,
 			content: .docs([""]),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
 			date: Date().removing(minutes: 3),
-			isRead: true
+			isRead: true,
+			status: .sent
 		)
 	]
 }
