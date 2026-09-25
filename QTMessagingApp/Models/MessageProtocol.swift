@@ -43,18 +43,6 @@ enum MessageStatus: Codable, Equatable, Hashable {
 	case failed
 }
 
-struct User: Codable, Hashable {
-	let id: String
-	let name: String
-	let avator: String?
-	
-	var dbValues: [String: AnyHashable] {[
-		"id": id,
-		"name": name,
-		"avator": avator
-	].compactMapValues { $0 }}
-}
-
 struct Message: MessageProtocol {
 	var id: String
 	var content: MessageContent
@@ -127,7 +115,7 @@ extension Message {
 		Message(
 			id: UUID().uuidString,
 			content: .text("Hello"),
-			sender: User(id: "me", name: "Nicolas", avator: nil),
+			sender: User(id: "ninos", name: "Nicolas", avator: nil),
 			date: Date().removing(minutes: 20),
 			isRead: true,
 			status: .sent
@@ -151,7 +139,7 @@ extension Message {
 		Message(
 			id: UUID().uuidString,
 			content: .text("Are you fine?"),
-			sender: User(id: "me", name: "Nicolas", avator: nil),
+			sender: User(id: "ninos", name: "Nicolas", avator: nil),
 			date: Date().removing(minutes: 16),
 			isRead: true,
 			status: .sent
@@ -167,7 +155,7 @@ extension Message {
 		Message(
 			id: UUID().uuidString,
 			content: .text("Proof"),
-			sender: User(id: "me", name: "Nicolas", avator: nil),
+			sender: User(id: "ninos", name: "Nicolas", avator: nil),
 			date: Date().removing(minutes: 10),
 			isRead: true,
 			status: .sent

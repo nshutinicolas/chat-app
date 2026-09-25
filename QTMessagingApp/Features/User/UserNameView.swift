@@ -52,7 +52,7 @@ struct UserNameView: View {
 	
 	private func onConfirmUserName() {
 		guard userNameText.count > 4 else { return }
-		let userId = UUID().uuidString
+		let userId = userNameText.replacingOccurrences(of: " ", with: "_").lowercased()
 		let user = User(id: userId, name: userNameText, avator: nil)
 		initialAppState.updateUserInfo(with: user)
 	}

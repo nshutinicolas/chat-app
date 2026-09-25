@@ -44,14 +44,12 @@ struct ChatDetailsView: View {
 							openDocSelector.toggle()
 						}
 					}
+					.buttonStyle(.plain)
+					.foregroundStyle(.secondary)
 					.labelStyle(.iconOnly)
 					.font(.title3.weight(.semibold))
 					.padding(8)
-					.clipShape(.circle)
-					.overlay {
-						Circle()
-							.stroke(Color.gray, lineWidth: 1)
-					}
+					.roundedBorder(for: .circle, lineWidth: .zero)
 					VStack {
 						if viewModel.selectedImages.isEmpty == false {
 							selectedImagesView()
@@ -97,7 +95,7 @@ struct ChatDetailsView: View {
 			let converted = await viewModel.selectedImagesConversion()
 			viewModel.selectedImagesState = .loaded(converted)
 		}
-		.navigationTitle(currentUser.name)
+		.navigationTitle(chat.otherUser(not: currentUser)?.name ?? "")
 		.navigationBarTitleDisplayMode(.inline)
     }
 	
@@ -250,8 +248,17 @@ struct ChatMessagesView: View {
 }
 
 struct MessageRow: View {
-	let currentUser: User
-	let message: any MessageProtocol
+	private let currentUser: User
+	private let message: any MessageProtocol
+	
+	init(currentUser: User, message: any MessageProtocol) {
+		self.currentUser = currentUser
+		self.message = message
+	}
+	var isMessageMine: Bool {
+		currentUser.id == message.sender.id
+	}
+	
 	var body: some View {
 		HStack {
 			VStack(alignment: .trailing, spacing: 4) {
@@ -259,7 +266,8 @@ struct MessageRow: View {
 				case .text(let text):
 					Text(text)
 						.padding()
-						.roundedBorder(16, fill: .gray.opacity(0.2), lineWidth: .zero)
+						.foregroundStyle(isMessageMine ? .white : .primary)
+						.roundedBorder(16, fill: isMessageMine ? .blue : Color.secondary.opacity(0.3), lineWidth: .zero)
 						.background(Color.gray.opacity(0.2))
 						.clipShape(.rect(cornerRadius: 16))
 				case .docs(let images):
@@ -302,26 +310,48 @@ struct MessageRow: View {
 	func imageView(_ urls: [String]) -> some View {
 		if urls.isEmpty {
 			EmptyView()
-		} else if urls.count == 1, let stringUrl = urls.first, let url = URL(string: stringUrl) {
+		} else if urls.count == 1, let stringUrl = urls.first {
 			// Single Image
 			RoundedRectangle(cornerRadius: 12)
 				.fill(Color.gray.opacity(0.3))
-				.frame(width: 200, height: 200)
+				.frame(width: 100, height: 100)
 				.overlay(
-					// TODO: Use Async image to load the image
-					AsyncImage(url: url)
-				)
-		} else {
-			// Multiple images
-			LazyVGrid(columns: [GridItem(.flexible(), spacing: 2), GridItem(.flexible(), spacing: 2)], spacing: 2) {
-				ForEach(urls, id: \.self) { url in
-					RoundedRectangle(cornerRadius: 8)
-						.fill(Color.gray.opacity(0.3))
-						.frame(height: 95)
-						.overlay(
+					AsyncImage(url: URL(string: stringUrl)) { phase in
+						switch phase {
+						case .success(let image):
+							image.resizable()
+								.scaledToFit()
+								.frame(height: 100)
+						default:
 							Image(systemName: "photo")
 								.font(.system(size: 20))
 								.foregroundColor(.gray)
+						}
+					}
+				)
+		} else {
+			// Multiple images
+			LazyVGrid(
+				columns: [GridItem(.flexible(), spacing: 2), GridItem(.flexible(), spacing: 2)],
+				spacing: 2
+			) {
+				ForEach(urls, id: \.self) { url in
+					RoundedRectangle(cornerRadius: 8)
+						.fill(Color.gray.opacity(0.3))
+						.frame(height: 100)
+						.overlay(
+							AsyncImage(url: URL(string: url)) { phase in
+								switch phase {
+								case .success(let image):
+									image.resizable()
+										.scaledToFit()
+										.frame(height: 100)
+								default:
+									Image(systemName: "photo")
+										.font(.system(size: 20))
+										.foregroundColor(.gray)
+								}
+							}
 						)
 				}
 			}

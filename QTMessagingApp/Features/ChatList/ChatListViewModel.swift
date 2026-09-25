@@ -34,7 +34,9 @@ class ChatListViewModel {
 				for try await chat in self.service.loadChats() {
 					var existing = self.chats
 					existing.append(chat)
-					self.chats = existing.sorted{ $0.latestMessage.date > $1.latestMessage.date }
+					self.chats = existing.sorted {
+						$0.latestMessage?.date ?? .now > $1.latestMessage?.date ?? .now
+					}
 					if self.displayState != .complete {
 						self.displayState = .complete
 					}

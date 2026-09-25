@@ -9,10 +9,12 @@ import SwiftUI
 
 struct ContentView: View {
 	@Environment(InitialAppState.self) private var initialState
+	@Environment(Coordinator.self) private var coordinator
 	init() { }
 	
     var body: some View {
-		NavigationStack {
+		@Bindable var bindableCoordinator = coordinator
+		NavigationStack(path: $bindableCoordinator.path) {
 			switch initialState.appLoadingState {
 			case .loading:
 				ProgressView("App loading...")
