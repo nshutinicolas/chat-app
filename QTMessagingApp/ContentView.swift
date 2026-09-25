@@ -8,39 +8,25 @@
 import SwiftUI
 
 struct ContentView: View {
-	@LocalProperties(.userId) var userId: String?
-	@LocalProperties(.userName) var userName: String?
-	@State private var userInfo: User?
-	
+	@Environment(InitialAppState.self) private var initialState
 	init() { }
 	
     var body: some View {
 		NavigationStack {
-			if let userInfo {
-				ChatListView(currentUser: userInfo)
-			} else {
-				UserNameView()
+			switch initialState.appLoadingState {
+			case .loading:
+				ProgressView("App loading...")
+			case .loaded:
+				if let userInfo = initialState.userInfo {
+					ChatListView(currentUser: userInfo)
+				} else {
+					UserNameView()
+				}
 			}
-		}
-		.onAppear {
-			guard let userId, let userName else { return }
-			userInfo = User(id: userId, name: userName, avator: nil)
 		}
     }
 }
 
 #Preview {
     ContentView()
-}
-
-@Observable
-class UserLocalInfo {
-	var userId: String
-	var userName: String
-	
-	init(userId: String, userName: String) {
-		self.userId = userId
-		self.userName = userName
-	}
-	
 }

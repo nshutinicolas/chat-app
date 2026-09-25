@@ -10,10 +10,12 @@ import SwiftData
 
 @main
 struct QTMessagingAppApp: App {
+	@State private var initialState = InitialAppState()
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
 		.modelContainer(for: UserInfo.self)
+		.environment(initialState)
     }
 }

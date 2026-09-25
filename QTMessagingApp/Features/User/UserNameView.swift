@@ -9,6 +9,7 @@ import SwiftUI
 
 struct UserNameView: View {
 	@Environment(\.modelContext) private var modelContext
+	@Environment(InitialAppState.self) private var initialAppState
 	@LocalProperties(.userId) private var userId: String?
 	@LocalProperties(.userName) private var userName: String?
 	@State private var userNameText = ""
@@ -51,8 +52,9 @@ struct UserNameView: View {
 	
 	private func onConfirmUserName() {
 		guard userNameText.count > 4 else { return }
-		userId = UUID().uuidString
-		userName = userNameText
+		let userId = UUID().uuidString
+		let user = User(id: userId, name: userNameText, avator: nil)
+		initialAppState.updateUserInfo(with: user)
 	}
 }
 
