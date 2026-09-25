@@ -48,19 +48,14 @@ extension MessagingService: ChatDetailsServiceProtocol {
 		}
 	}
 	
-	func sendMessage(_ message: MessageContent) async throws {
+	func sendMessage(_ message: any MessageProtocol) async throws {
 		// Encrypt the data before sending
-		let messageData: Data? = switch message {
-		case .text(let text):
-			text.data(using: .utf8)
-		case .images(let images):
-			Data(images.joined().utf8)
-		case .files(let files):
-			Data(files.joined().utf8)
-		}
-		guard let messageData else {
-			throw ServiceError.invalidData
-		}
 		
+	}
+	
+	func uploadDocuments(_ data: [Data]) async throws -> [String] {
+		// Connect to service
+		// For test only
+		return []
 	}
 }

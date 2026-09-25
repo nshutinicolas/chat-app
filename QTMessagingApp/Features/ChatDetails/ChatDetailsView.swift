@@ -5,6 +5,7 @@
 //  Created by Musoni nshuti Nicolas on 24/09/2026.
 //
 
+import PhotosUI
 import SwiftUI
 
 struct ChatDetailsView: View {
@@ -17,7 +18,7 @@ struct ChatDetailsView: View {
 	init(currentUser: User, chat: any ChatProtocol) {
 		self.currentUser = currentUser
 		self.chat = chat
-		self._viewModel = State(wrappedValue: ChatDetailsViewModel(chat: chat))
+		self._viewModel = State(wrappedValue: ChatDetailsViewModel(chat: chat, currentUser: currentUser))
 	}
 	
     var body: some View {
@@ -37,7 +38,7 @@ struct ChatDetailsView: View {
 		.frame(maxWidth: .infinity, maxHeight: .infinity)
 		.safeAreaInset(edge: .bottom) {
 			VStack {
-				HStack {
+				HStack(alignment: .bottom) {
 					Button("", systemImage: "plus") {
 						withAnimation {
 							openDocSelector.toggle()
@@ -51,51 +52,39 @@ struct ChatDetailsView: View {
 						Circle()
 							.stroke(Color.gray, lineWidth: 1)
 					}
-					TextField("Enter a message", text: .constant(""))
-						.focused($textfieldFocused)
-						.font(.body)
-						.lineLimit(1...6)
-						.fixedSize(horizontal: false, vertical: true)
-						.padding(.vertical, 12)
-						.padding(.horizontal, 8)
-						.overlay {
-							RoundedRectangle(cornerRadius: 12)
-								.stroke(Color.gray, lineWidth: 1)
+					VStack {
+						if viewModel.selectedImages.isEmpty == false {
+							selectedImagesView()
+							Divider()
 						}
-						.background()
-						.clipShape(.rect(cornerRadius: 12))
+						HStack(alignment: .bottom) {
+							TextField("Enter a message", text: $viewModel.textFieldText)
+								.focused($textfieldFocused)
+								.font(.body)
+								.lineLimit(1...6)
+								.fixedSize(horizontal: false, vertical: true)
+							Button("Send", systemImage: "paperplane.fill") {
+								viewModel.sendMessage()
+							}
+							.labelStyle(.iconOnly)
+						}
+					}
+					.padding(.vertical, 12)
+					.padding(.horizontal, 8)
+					.overlay {
+						RoundedRectangle(cornerRadius: 12)
+							.stroke(Color.gray, lineWidth: 1)
+					}
+					.background()
+					.clipShape(.rect(cornerRadius: 12))
 				}
 				.background()
 				if openDocSelector {
-					HStack(spacing: 12) {
-						Button {} label: {
-							VStack {
-								Image(systemName: "camera")
-								Text("Take Photo")
-							}
-							.background()
-						}
-						.buttonStyle(.plain)
-						Button {} label: {
-							VStack {
-								Image(systemName: "photo")
-								Text("Gallery")
-							}
-							.background()
-						}
-						.buttonStyle(.plain)
-						Button {} label: {
-							VStack {
-								Image(systemName: "doc")
-								Text("Document")
-							}
-							.background()
-						}
-						.buttonStyle(.plain)
-					}
-					.frame(maxWidth: .infinity, alignment: .leading)
+					documentSelectors()
 				}
 			}
+			.padding(.vertical, 8)
+			.background()
 		}
 		.padding()
 		.onChange(of: textfieldFocused) { oldValue, newValue in
@@ -104,9 +93,109 @@ struct ChatDetailsView: View {
 				openDocSelector = false
 			}
 		}
+		.task(id: viewModel.selectedImages) {
+			let converted = await viewModel.selectedImagesConversion()
+			viewModel.selectedImagesState = .loaded(converted)
+		}
 		.navigationTitle(currentUser.name)
-//		.navigationBarTitleDisplayMode(.inline)
+		.navigationBarTitleDisplayMode(.inline)
     }
+	
+	@ViewBuilder
+	private func selectedImagesView() -> some View {
+		switch viewModel.selectedImagesState {
+		case .loading:
+			RoundedRectangle(cornerRadius: 12)
+				.stroke(Color.gray.opacity(0.2), lineWidth: 1)
+				.frame(width: 100, height: 100)
+				.overlay {
+					ProgressView()
+						.controlSize(.large)
+				}
+				.clipShape(.rect(cornerRadius: 12))
+		case .loaded(let imageData):
+			ScrollView(.horizontal) {
+				HStack {
+					ForEach(0..<imageData.count, id: \.self) { index in
+						if let uiImage = UIImage(data: imageData[index]) {
+							Image(uiImage: uiImage)
+								.resizable()
+								.scaledToFit()
+								.frame(height: 100)
+								.overlay(alignment: .topTrailing) {
+									Button("delete", systemImage: "xmark") {
+										var loadedImageData = [Data]()
+										if case let .loaded(data) = viewModel.selectedImagesState {
+											loadedImageData = data
+											loadedImageData.remove(at: index)
+											withAnimation {
+												viewModel.selectedImagesState = .loaded(loadedImageData)
+												viewModel.selectedImages.remove(at: index)
+											}
+										}
+									}
+									.font(.footnote)
+									.fontWeight(.bold)
+									.buttonStyle(.plain)
+									.labelStyle(.iconOnly)
+									.foregroundStyle(.white)
+									.padding(4)
+									.roundedBorder(for: .circle, color: .white, fill: Color.gray.opacity(0.8), lineWidth: 2)
+									.padding(4)
+								}
+								.roundedBorder(12, lineWidth: 0)
+						}
+					}
+				}
+			}
+		case .empty:
+			EmptyView()
+		}
+	}
+	
+	@ViewBuilder
+	private func documentSelectors() -> some View {
+		HStack(spacing: 12) {
+			selectDocumentButton(icon: "camera", text: "Camera") {
+				
+			}
+			PhotosPicker(
+				selection: $viewModel.selectedImages,
+				maxSelectionCount: 4,
+				matching: .images
+			) {
+				VStack {
+					Image(systemName: "photo")
+						.padding()
+						.background(Color.gray.opacity(0.2))
+						.clipShape(.circle)
+					Text("Photos")
+				}
+				.background()
+			}
+			.buttonStyle(.plain)
+			selectDocumentButton(icon: "doc", text: "Document") {
+				
+			}
+		}
+		.frame(maxWidth: .infinity, alignment: .leading)
+	}
+	
+	@ViewBuilder
+	private func selectDocumentButton(icon: String, text: String, _ action: @escaping () -> Void) -> some View {
+		Button {
+			action()
+		} label: {
+			VStack {
+				Image(systemName: icon)
+					.padding()
+					.background(Color.gray.opacity(0.2))
+					.clipShape(.circle)
+				Text(text)
+			}
+		}
+		.buttonStyle(.plain)
+	}
 }
 
 struct ChatMessagesView: View {
@@ -171,11 +260,8 @@ struct MessageRow: View {
 					.padding()
 					.background(Color.gray.opacity(0.2))
 					.clipShape(.rect(cornerRadius: 16))
-			case .images(let images):
+			case .docs(let images):
 				imageView(images)
-			case .files:
-				// TODO: Implement the view later
-				EmptyView()
 			}
 			Text(message.date.chatFormatted())
 				.font(.caption)

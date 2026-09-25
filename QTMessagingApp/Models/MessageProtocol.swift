@@ -18,8 +18,22 @@ protocol MessageProtocol: Codable, Hashable, Equatable {
 
 enum MessageContent: Codable, Hashable {
 	case text(String)
-	case images([String])
-	case files([String])
+	case docs([String])
+	
+	var dbValues: [String: AnyHashable] {
+		switch self {
+		case .text(let string):
+			return [
+				"content": string,
+				"type": "TEXT"
+			]
+		case .docs(let docs):
+			return [
+				"content": docs,
+				"type": "DOCS"
+			]
+		}
+	}
 }
 
 enum MessageStatus: Codable, Equatable, Hashable {
@@ -32,6 +46,12 @@ struct User: Codable, Hashable {
 	let id: String
 	let name: String
 	let avator: String?
+	
+	var dbValues: [String: AnyHashable] {[
+		"id": id,
+		"name": name,
+		"avator": avator
+	].compactMapValues { $0 }}
 }
 
 struct Message: MessageProtocol {
@@ -83,6 +103,16 @@ struct Message: MessageProtocol {
 	static func == (lhs: Message, rhs: Message) -> Bool {
 		lhs.id == rhs.id
 	}
+	
+	// For database storage
+	var dbValues: [String: AnyHashable] {[
+		"id": id,
+		"content": content.dbValues,
+		"sender": sender.dbValues,
+		"date": date.iSOTimestamp,
+		"is_read": isRead,
+		"reply_to": replyTo?.id
+	]}
 }
 
 // MARK: - Mocks
@@ -132,7 +162,7 @@ extension Message {
 		),
 		Message(
 			id: UUID().uuidString,
-			content: .images([""]),
+			content: .docs([""]),
 			sender: User(id: "other", name: "Nshuti", avator: nil),
 			date: Date().removing(minutes: 3),
 			isRead: true

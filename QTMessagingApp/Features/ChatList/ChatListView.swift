@@ -74,10 +74,8 @@ struct ChatListView: View {
 		switch chat.latestMessage.content {
 		case .text(let text):
 			Text(text)
-		case .images(let images):
-			Text("^[\(images.count) image](inflect: true)")
-		case .files(let files):
-			Text("^[\(files.count) file](inflect: true)")
+		case .docs(let docs):
+			Text("^[\(docs.count) document](inflect: true)")
 		}
 	}
 }
