@@ -20,27 +20,40 @@ class ChatListViewModel {
 	
 	init(service: ChatListServiceProtocol = MessagingService.shared) {
 		self.service = service
+		fetchChats()
 	}
+	// Task
+	private var tasks: [Tasks: Task<Void, Never>] = [:]
 	
 	func fetchChats() {
-		Task { @MainActor [weak self] in
+		guard tasks[.fetchChats] == nil else { return }
+		tasks[.fetchChats] = Task { @MainActor [weak self] in
 			guard let self else { return }
 			do {
 				self.displayState = .loading
 				for try await chat in self.service.loadChats() {
 					var existing = self.chats
 					existing.append(chat)
-					self.chats = existing.sorted{ $0.latestMessage.date > $1.latestMessage.date }
-					self.displayState = .complete
+					self.chats = existing.sorted {
+						$0.latestMessage?.date ?? .now > $1.latestMessage?.date ?? .now
+					}
+					if self.displayState != .complete {
+						self.displayState = .complete
+					}
 				}
 			} catch {
 				print(error)
+				tasks[.fetchChats] = nil
 			}
 		}
 	}
 	
 	enum DisplayState: Equatable {
 		case loading, complete, error
+	}
+	
+	enum Tasks {
+		case fetchChats
 	}
 }
 

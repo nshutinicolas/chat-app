@@ -8,8 +8,8 @@
 import Foundation
 
 extension Date {
-	func adding(minutes: Int) -> Date {
-		Calendar.current.date(byAdding: .minute, value: minutes, to: self) ?? self
+	func removing(minutes: Int) -> Date {
+		Calendar.current.date(byAdding: .minute, value: -minutes, to: self) ?? self
 	}
 	
 	func chatFormatted() -> String {
@@ -25,5 +25,11 @@ extension Date {
 			dateFormatter.dateFormat = "dd/MM"
 			return dateFormatter.string(from: self)
 		}
+	}
+	
+	/// This will produce: "2026-04-07T18:57:59Z"
+	var iSOTimestamp: String {
+		let formatter = ISO8601DateFormatter()
+		return formatter.string(from: self)
 	}
 }

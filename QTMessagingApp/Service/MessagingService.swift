@@ -38,22 +38,24 @@ extension MessagingService: ChatDetailsServiceProtocol {
 	func loadChatMessages(forChat chatId: String) -> AsyncThrowingStream<any MessageProtocol, Error> {
 		AsyncThrowingStream { continuation in
 			// Do the service work from here
+			// For Testing purpose only
+			Task {
+				for message in Message.mocks {
+					continuation.yield(message)
+					try? await Task.sleep(for: .seconds(0.3))
+				}
+			}
 		}
 	}
 	
-	func sendMessage(_ message: MessageContent) async throws {
+	func sendMessage(_ message: any MessageProtocol) async throws {
 		// Encrypt the data before sending
-		let messageData: Data? = switch message {
-		case .text(let text):
-			text.data(using: .utf8)
-		case .images(let images):
-			Data(images.joined().utf8)
-		case .files(let files):
-			Data(files.joined().utf8)
-		}
-		guard let messageData else {
-			throw ServiceError.invalidData
-		}
 		
+	}
+	
+	func uploadDocuments(_ data: [Data]) async throws -> [String] {
+		// Connect to service
+		// For test only
+		return []
 	}
 }

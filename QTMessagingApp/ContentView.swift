@@ -8,15 +8,21 @@
 import SwiftUI
 
 struct ContentView: View {
-	@LocalProperties(.userId) var userId: String?
-	@LocalProperties(.userName) var userName: String?
+	@Environment(InitialAppState.self) private var initialState
+	@Environment(Coordinator.self) private var coordinator
+	init() { }
+	
     var body: some View {
-		NavigationStack {
-			if let userId, let userName {
-				ChatListView(currentUser: User(id: userId, name: userName, avator: nil))
-			} else {
-				UserNameView {
-					// Using this completion to observe the content change in setting the user name
+		@Bindable var bindableCoordinator = coordinator
+		NavigationStack(path: $bindableCoordinator.path) {
+			switch initialState.appLoadingState {
+			case .loading:
+				ProgressView("App loading...")
+			case .loaded:
+				if let userInfo = initialState.userInfo {
+					ChatListView(currentUser: userInfo)
+				} else {
+					UserNameView()
 				}
 			}
 		}

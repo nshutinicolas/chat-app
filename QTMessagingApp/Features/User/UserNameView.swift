@@ -9,14 +9,12 @@ import SwiftUI
 
 struct UserNameView: View {
 	@Environment(\.modelContext) private var modelContext
+	@Environment(InitialAppState.self) private var initialAppState
 	@LocalProperties(.userId) private var userId: String?
 	@LocalProperties(.userName) private var userName: String?
 	@State private var userNameText = ""
-	private let complete: () -> Void
 	
-	init(_ complete: @escaping () -> Void) {
-		self.complete = complete
-	}
+	init() { }
 	
     var body: some View {
 		VStack(spacing: 12) {
@@ -54,13 +52,14 @@ struct UserNameView: View {
 	
 	private func onConfirmUserName() {
 		guard userNameText.count > 4 else { return }
-		userId = UUID().uuidString
-		userName = userNameText
+		let userId = userNameText.replacingOccurrences(of: " ", with: "_").lowercased()
+		let user = User(id: userId, name: userNameText, avator: nil)
+		initialAppState.updateUserInfo(with: user)
 	}
 }
 
 #Preview {
-	UserNameView { }
+	UserNameView()
 }
 
 // Local storage of the user info
