@@ -8,15 +8,14 @@
 import SwiftUI
 
 struct UserNameView: View {
-	@Environment(\.modelContext) private var modelContext
 	@Environment(InitialAppState.self) private var initialAppState
-	@LocalProperties(.userId) private var userId: String?
-	@LocalProperties(.userName) private var userName: String?
-	@State private var userNameText = ""
+	@AppStorage(AppConfig.serverURLKey) private var serverURL = AppConfig.defaultServerURL
+	@State private var viewModel = ViewModel()
 	
 	init() { }
 	
     var body: some View {
+		@Bindable var viewModel = viewModel
 		VStack(spacing: 12) {
 			Text("Welcome to Chat")
 				.font(.largeTitle)
@@ -27,7 +26,7 @@ struct UserNameView: View {
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
 			.fixedSize(horizontal: false, vertical: true)
-			TextField("Enter your name", text: $userNameText)
+			TextField("Enter your name", text: $viewModel.username)
 				.font(.body)
 				.padding(.vertical, 12)
 				.padding(.horizontal, 8)
@@ -37,8 +36,34 @@ struct UserNameView: View {
 				}
 				.background()
 				.clipShape(.rect(cornerRadius: 12))
+			VStack(alignment: .leading, spacing: 6) {
+				Text("Server endpoint")
+					.font(.caption)
+					.foregroundStyle(.secondary)
+				TextField("http://localhost:8080", text: $serverURL)
+					.textInputAutocapitalization(.never)
+					.autocorrectionDisabled()
+					.keyboardType(.URL)
+					.font(.body)
+					.padding(.vertical, 12)
+					.padding(.horizontal, 8)
+					.overlay {
+						RoundedRectangle(cornerRadius: 12)
+							.stroke(Color.gray, lineWidth: 1)
+					}
+			}
+			if let errorMessage = viewModel.errorMessage {
+				Text(errorMessage)
+					.font(.footnote)
+					.foregroundStyle(.red)
+					.frame(maxWidth: .infinity, alignment: .leading)
+			}
 			Button("Confirm") {
-				onConfirmUserName()
+				Task {
+					if let user = await viewModel.createUser(serverURL: serverURL) {
+						initialAppState.updateUserInfo(with: user)
+					}
+				}
 			}
 			.buttonStyle(.plain)
 			.foregroundStyle(.white)
@@ -46,15 +71,50 @@ struct UserNameView: View {
 			.frame(maxWidth: .infinity)
 			.background(Color.blue)
 			.clipShape(.capsule)
+			.disabled(!viewModel.canCreateUser)
+			.overlay {
+				if viewModel.isCreatingUser { ProgressView().tint(.white) }
+			}
 		}
 		.padding()
     }
-	
-	private func onConfirmUserName() {
-		guard userNameText.count > 4 else { return }
-		let userId = userNameText.replacingOccurrences(of: " ", with: "_").lowercased()
-		let user = User(id: userId, name: userNameText, avator: nil)
-		initialAppState.updateUserInfo(with: user)
+}
+
+extension UserNameView {
+	@MainActor
+	@Observable
+	final class ViewModel {
+		private let service = MessagingService.shared
+		var username = ""
+		private(set) var isCreatingUser = false
+		private(set) var errorMessage: String?
+		
+		var canCreateUser: Bool {
+			(3...32).contains(username.trimmingCharacters(in: .whitespacesAndNewlines).count) && !isCreatingUser
+		}
+		
+		/// Validates input and delegates account creation to the shared service.
+		func createUser(serverURL: String) async -> User? {
+			let username = username.trimmingCharacters(in: .whitespacesAndNewlines)
+			guard (3...32).contains(username.count) else {
+				errorMessage = "Your name must be between 3 and 32 characters."
+				return nil
+			}
+			guard let endpoint = URL(string: serverURL), endpoint.scheme == "http" || endpoint.scheme == "https" else {
+				errorMessage = "Enter a valid http:// or https:// server endpoint."
+				return nil
+			}
+			
+			isCreatingUser = true
+			errorMessage = nil
+			defer { isCreatingUser = false }
+			do {
+				return try await service.createUser(username: username)
+			} catch {
+				errorMessage = error.localizedDescription
+				return nil
+			}
+		}
 	}
 }
 
