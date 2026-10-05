@@ -17,7 +17,7 @@ class InitialAppState {
 		// Current user data from Userdefaults values
 		let userName: String? = LocalProperties(.userName).wrappedValue
 		let userId: String? = LocalProperties(.userId).wrappedValue
-		if let userId, let userName {
+		if let userId, UUID(uuidString: userId) != nil, let userName {
 			self.userInfo = User(id: userId, name: userName, avator: nil)
 		}
 		appLoadingState = .loaded

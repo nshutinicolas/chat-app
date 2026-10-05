@@ -17,12 +17,21 @@ struct ChatListView: View {
 		self.currentUser = currentUser
 	}
 	
-    var body: some View {
+	var body: some View {
 		VStack {
 			switch viewModel.displayState {
 			case .loading:
-				// Create a shimmer view
-				ProgressView("Loading chats...")
+				ProgressView("Connecting to messages…")
+			case .empty:
+				ContentUnavailableView {
+					Label("No messages yet", systemImage: "bubble.left.and.bubble.right")
+				} description: {
+					Text("Start a new conversation to see it here.")
+				} actions: {
+					Button("New message", systemImage: "square.and.pencil") {
+						showNewUserSelection = true
+					}
+				}
 			case .complete:
 				ScrollView {
 					LazyVStack {
@@ -68,71 +77,28 @@ struct ChatListView: View {
 					.roundedBorder(for: .circle)
 					.padding()
 				}
-			case .error:
+			case .error(let message):
 				VStack {
-					Text("Failed to load messages")
+					Text(message)
 						.foregroundStyle(.red)
-					Button("Retry") { }
+					Text("Trying to reconnect…")
+						.font(.footnote)
+						.foregroundStyle(.secondary)
 				}
 			}
 		}
 		.sheet(isPresented: $showNewUserSelection) {
-			VStack {
-				Text("Start Chat with")
-					.font(.title3.weight(.semibold))
-					.padding()
-				ScrollView {
-					VStack {
-						ForEach(User.mocks, id: \.id) { user in
-							let newChat = Chat(id: UUID().uuidString, latestMessage: nil, participants: [currentUser, user])
-							Button {
-								showNewUserSelection = false
-								coordinator.push(newChat)
-							} label: {
-								HStack {
-									if let avator = currentUser.avator {
-										AsyncImage(url: URL(string: avator)) { phase in
-											if phase.error != nil {
-												Circle()
-													.fill(Color.gray)
-													.frame(width: 40, height: 40)
-											}
-											if let image = phase.image {
-												image.resizable()
-													.scaledToFit()
-													.frame(width: 40, height: 40)
-											}
-										}
-									} else {
-										Circle()
-											.fill(Color.gray)
-											.frame(width: 40, height: 40)
-									}
-									VStack(alignment: .leading) {
-										Text(user.name)
-											.fontWeight(.semibold)
-										Text("@\(user.id)")
-											.font(.caption)
-											.foregroundStyle(.secondary)
-									}
-								}
-								.frame(maxWidth: .infinity, alignment: .leading)
-								.background()
-							}
-							.buttonStyle(.plain)
-						}
-					}
-					.padding()
-					.frame(maxWidth: .infinity, maxHeight: .infinity)
-					.background()
-				}
+			NewMessageView(currentUser: currentUser) { chat in
+				showNewUserSelection = false
+				coordinator.push(chat)
 			}
-			.frame(maxWidth: .infinity, maxHeight: .infinity)
-			.background()
 		}
 		.navigationTitle("Messages")
 		.navigationDestination(for: Chat.self) { chat in
 			ChatDetailsView(currentUser: currentUser, chat: chat)
+		}
+		.task(id: currentUser.id) {
+			await viewModel.run(for: currentUser.id)
 		}
     }
 	
