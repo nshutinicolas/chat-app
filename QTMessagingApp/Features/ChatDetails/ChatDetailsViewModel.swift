@@ -18,6 +18,12 @@ protocol ChatDetailsServiceProtocol {
 	/// Sending messages of different content type
 	/// - Parameter message: `MessageProtocol`
 	func sendMessage(_ message: any MessageProtocol) async throws
+	/// Sending Text message
+	/// - Parameters:
+	///  - text: text message of string type
+	///  - chatID: chat id being replied to
+	///  - senderID: current user id
+	func sendTextMessage(_ text: String, chatID: String, senderID: String) async throws -> any MessageProtocol
 	/// Uploading images, file documents sent in the message before they are saved to the DB
 	/// - Parameter data: Data representation of the files being uploaded
 	/// - Returns string represantaion of the image location on the server
@@ -64,20 +70,7 @@ class ChatDetailsViewModel {
 			guard let self else { return }
 			self.loadingState = .loading
 			for await chat in self.service.loadChatMessages(forChat: chatId, userID: currentUser.id) {
-				var previousMessages = self.messages
-				switch chat {
-				case .messages(let messages):
-					previousMessages.append(contentsOf: messages)
-				case .message(let message):
-					previousMessages.append(message)
-				default:
-					// Can't do anything
-					break
-				}
-				self.messages = previousMessages.sorted { $0.date < $1.date }
-				if self.loadingState != .loaded {
-					self.loadingState = .loaded
-				}
+				upsertMessages(with: chat)
 			}
 		}
 	}
@@ -112,6 +105,7 @@ class ChatDetailsViewModel {
 			}
 			// Sending text message
 			if textFieldText.trimmingCharacters(in: CharacterSet(charactersIn: " ")).isEmpty == false {
+				/**TODO: Uncomment when supporting multiple message types
 				let message = Message(
 					id: UUID().uuidString,
 					content: .text(textFieldText),
@@ -121,8 +115,10 @@ class ChatDetailsViewModel {
 					status: .sending,
 					replyTo: self.replyTo
 				)
+				 */
 				do {
-					try await self.service.sendMessage(message)
+					let message = try await self.service.sendTextMessage(textFieldText, chatID: chat.id, senderID: currentUser.id)
+					upsertMessages(with: .message(message))
 					// Create Message and append it to the queue
 					// It will work as a placeholder until it is replaced by the new message
 				} catch {
@@ -130,6 +126,24 @@ class ChatDetailsViewModel {
 				}
 			}
 			tasks[.sendMessage] = nil
+		}
+	}
+	
+	@MainActor
+	private func upsertMessages(with updates: ChatMessageUpdate) {
+		var previousMessages = self.messages
+		switch updates {
+		case .messages(let messages):
+			previousMessages.append(contentsOf: messages)
+		case .message(let message):
+			previousMessages.append(message)
+		default:
+			// Can't do anything
+			break
+		}
+		self.messages = previousMessages.sorted { $0.date < $1.date }
+		if self.loadingState != .loaded {
+			self.loadingState = .loaded
 		}
 	}
 	

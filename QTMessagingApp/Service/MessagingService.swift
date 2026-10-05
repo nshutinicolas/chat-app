@@ -134,19 +134,6 @@ class MessagingService {
 		return response.chat
 	}
 
-	func sendTextMessage(_ text: String, chatID: String, senderID: String) async throws -> Message {
-		guard let chatID = UUID(uuidString: chatID), let senderID = UUID(uuidString: senderID) else {
-			throw ServiceAPIError(message: "This conversation is no longer valid.")
-		}
-		let response: ServerMessage = try await request(
-			"chats/messages/\(chatID.uuidString)",
-			method: .post,
-			queryItems: [URLQueryItem(name: "user_id", value: senderID.uuidString)],
-			body: JSONEncoder().encode(CreateMessageRequest(type: "text", text: text))
-		)
-		return response.message
-	}
-
 	// MARK: - HTTP
 
 	private func request<Response: Decodable>(
@@ -325,8 +312,21 @@ extension MessagingService: ChatDetailsServiceProtocol {
 		}
 	}
 	
-	func sendMessage(text: String, chatID: String, senderID: String) async throws -> Message {
+	func sendMessage(text: String, chatID: String, senderID: String) async throws -> any MessageProtocol {
 		try await sendTextMessage(text, chatID: chatID, senderID: senderID)
+	}
+	
+	func sendTextMessage(_ text: String, chatID: String, senderID: String) async throws -> any MessageProtocol {
+		guard let chatID = UUID(uuidString: chatID), let senderID = UUID(uuidString: senderID) else {
+			throw ServiceAPIError(message: "This conversation is no longer valid.")
+		}
+		let response: ServerMessage = try await request(
+			"chats/messages/\(chatID.uuidString)",
+			method: .post,
+			queryItems: [URLQueryItem(name: "user_id", value: senderID.uuidString)],
+			body: JSONEncoder().encode(CreateMessageRequest(type: "text", text: text))
+		)
+		return response.message
 	}
 	
 	func uploadDocuments(_ data: [Data]) async throws -> [String] {
