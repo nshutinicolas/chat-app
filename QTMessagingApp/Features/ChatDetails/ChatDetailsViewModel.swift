@@ -10,9 +10,11 @@ import SwiftUI
 
 protocol ChatDetailsServiceProtocol {
 	/// Load chat messages based on a chat id
-	/// - Parameter chatId: String representation of the chat id whose messages are to be fetched
-	/// - Returns `AsyncThrowingStream` for MessageProtocol
-	func loadChatMessages(forChat chatId: String) -> AsyncThrowingStream<any MessageProtocol, Error>
+	/// - Parameters:
+	///  - chatId: String representation of the chat id whose messages are to be fetched
+	///  - userId: Current userId that connect to the user specific websocket
+	/// - Returns `AsyncStream` for ChatMessageUpdate
+	func loadChatMessages(forChat chatID: String, userID: String) -> AsyncStream<ChatMessageUpdate>
 	/// Sending messages of different content type
 	/// - Parameter message: `MessageProtocol`
 	func sendMessage(_ message: any MessageProtocol) async throws
@@ -61,19 +63,21 @@ class ChatDetailsViewModel {
 		tasks[.fetchChatMessages] = Task { @MainActor [weak self] in
 			guard let self else { return }
 			self.loadingState = .loading
-			do {
-				for try await chat in self.service.loadChatMessages(forChat: chatId) {
-					var previousMessages = self.messages
-					previousMessages.append(chat)
-					self.messages = previousMessages.sorted { $0.date < $1.date }
-					if self.loadingState != .loaded {
-						self.loadingState = .loaded
-					}
+			for await chat in self.service.loadChatMessages(forChat: chatId, userID: currentUser.id) {
+				var previousMessages = self.messages
+				switch chat {
+				case .messages(let messages):
+					previousMessages.append(contentsOf: messages)
+				case .message(let message):
+					previousMessages.append(message)
+				default:
+					// Can't do anything
+					break
 				}
-			} catch {
-				self.loadingState = .error
-				print(error)
-				tasks[.fetchChatMessages] = nil
+				self.messages = previousMessages.sorted { $0.date < $1.date }
+				if self.loadingState != .loaded {
+					self.loadingState = .loaded
+				}
 			}
 		}
 	}

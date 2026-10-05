@@ -17,4 +17,14 @@ enum AppConfig {
 		let value = UserDefaults.standard.string(forKey: serverURLKey) ?? defaultServerURL
 		return URL(string: value) ?? URL(string: defaultServerURL)!
 	}
+
+	static func socketURL(path: String, userID: UUID) -> URL? {
+		guard var components = URLComponents(
+			url: baseURL.appendingPathComponent(path),
+			resolvingAgainstBaseURL: false
+		) else { return nil }
+		components.scheme = components.scheme == "https" ? "wss" : "ws"
+		components.queryItems = [URLQueryItem(name: "user_id", value: userID.uuidString)]
+		return components.url
+	}
 }

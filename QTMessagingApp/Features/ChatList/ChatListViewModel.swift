@@ -8,9 +8,10 @@
 import SwiftUI
 
 protocol ChatListServiceProtocol {
-	func loadChats() -> AsyncThrowingStream<any ChatProtocol, Error>
+	func loadChats(for userID: String) -> AsyncStream<ChatListUpdate>
 }
 
+@MainActor
 @Observable
 class ChatListViewModel {
 	private let service: ChatListServiceProtocol
@@ -20,40 +21,25 @@ class ChatListViewModel {
 	
 	init(service: ChatListServiceProtocol = MessagingService.shared) {
 		self.service = service
-		fetchChats()
 	}
-	// Task
-	private var tasks: [Tasks: Task<Void, Never>] = [:]
 	
-	func fetchChats() {
-		guard tasks[.fetchChats] == nil else { return }
-		tasks[.fetchChats] = Task { @MainActor [weak self] in
-			guard let self else { return }
-			do {
-				self.displayState = .loading
-				for try await chat in self.service.loadChats() {
-					var existing = self.chats
-					existing.append(chat)
-					self.chats = existing.sorted {
-						$0.latestMessage?.date ?? .now > $1.latestMessage?.date ?? .now
-					}
-					if self.displayState != .complete {
-						self.displayState = .complete
-					}
-				}
-			} catch {
-				print(error)
-				tasks[.fetchChats] = nil
+	func run(for userID: String) async {
+		for await update in service.loadChats(for: userID) {
+			switch update {
+			case .connected:
+				if case .error = displayState { displayState = .loading }
+			case .disconnected:
+				if chats.isEmpty { displayState = .loading }
+			case .chats(let chats):
+				self.chats = chats.sorted { ($0.latestMessage?.date ?? .distantPast) > ($1.latestMessage?.date ?? .distantPast) }
+				displayState = chats.isEmpty ? .empty : .complete
+			case .failure(let message):
+				displayState = .error(message)
 			}
 		}
 	}
 	
 	enum DisplayState: Equatable {
-		case loading, complete, error
-	}
-	
-	enum Tasks {
-		case fetchChats
+		case loading, empty, complete, error(String)
 	}
 }
-

@@ -14,9 +14,9 @@
             filePath = "QTMessagingApp/Features/ChatDetails/ChatDetailsViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "51"
-            endingLineNumber = "51"
-            landmarkName = "fetchChatMessages(chatId:)"
+            startingLineNumber = "52"
+            endingLineNumber = "52"
+            landmarkName = "init(chat:currentUser:service:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -30,9 +30,9 @@
             filePath = "QTMessagingApp/Features/ChatDetails/ChatDetailsViewModel.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "44"
-            endingLineNumber = "44"
-            landmarkName = "fetchChatMessages(chatId:)"
+            startingLineNumber = "46"
+            endingLineNumber = "46"
+            landmarkName = "init(chat:currentUser:service:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
